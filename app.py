@@ -156,14 +156,14 @@ if st.session_state.marketing_open:
 # -------------------------
 # Fundraising Section
 # -------------------------
-# --- Fundraising / Corporate Sponsorships Section ---
-if "fundraising_open" not in st.session_state:
-    st.session_state.fundraising_open = False
-if st.button("Fundraising / Corporate Sponsorships", key="fundraising_button"):
-    st.session_state.fundraising_open = not st.session_state.fundraising_open
+# # --- Fundraising / Corporate Sponsorships Section ---
+# if "fundraising_open" not in st.session_state:
+#     st.session_state.fundraising_open = False
+# if st.button("Fundraising / Corporate Sponsorships", key="fundraising_button"):
+#     st.session_state.fundraising_open = not st.session_state.fundraising_open
 
-if st.session_state.fundraising_open:
-    fundraising_tab()
+# if st.session_state.fundraising_open:
+#     fundraising_tab()
 
 
 # -------------------------
