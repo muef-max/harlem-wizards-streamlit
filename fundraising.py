@@ -11,6 +11,35 @@ from google.oauth2.service_account import Credentials
 import pandas as pd
 import json
 
+
+# Load credentials
+creds_dict = json.loads(st.secrets["GOOGLE_CREDENTIALS"])
+creds = Credentials.from_service_account_info(
+    creds_dict,
+    scopes=["https://www.googleapis.com/auth/spreadsheets"]
+)
+gc = gspread.authorize(creds)
+
+# Try opening the sheet
+SPREADSHEET_NAME = "MUEF Corporate Sponsors Target List 2025"
+try:
+    sh = gc.open(SPREADSHEET_NAME)
+    print("✅ Sheet opened successfully!")
+except Exception as e:
+    print("❌ Failed to open sheet:", e)
+
+
+st.write("Testing secrets...")
+
+try:
+    creds_dict = json.loads(st.secrets["GOOGLE_CREDENTIALS"])
+    st.success("✅ GOOGLE_CREDENTIALS loaded successfully!")
+except KeyError:
+    st.error("❌ GOOGLE_CREDENTIALS not found in secrets.toml")
+except json.JSONDecodeError as e:
+    st.error(f"❌ JSON decode error: {e}")
+
+
 def fundraising_tab():
     st.header("Fundraising / Corporate Sponsorships")
 
