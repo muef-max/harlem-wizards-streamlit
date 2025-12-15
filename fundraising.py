@@ -29,7 +29,7 @@ def fundraising_tab():
     )
     gc = gspread.authorize(creds)
 
-    SPREADSHEET_NAME = "MUEF Corporate Sponsors Target List 2025.xlsx"
+    SPREADSHEET_NAME = "MUEF Corporate Sponsors Target List 2025"
 
     try:
         sh = gc.open(SPREADSHEET_NAME)
