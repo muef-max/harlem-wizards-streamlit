@@ -33,7 +33,7 @@ def fundraising_tab():
 
     try:
         sh = gc.open(SPREADSHEET_NAME)
-        worksheet = sh.sheet1
+        worksheet = sh.worksheet("Sponsor_target")
     except Exception as e:
         st.error("❌ Unable to open Google Sheet. Check name and permissions.")
         st.stop()
