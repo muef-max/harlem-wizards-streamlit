@@ -1,0 +1,8 @@
+[theme]
+base="dark"  # Options: "light" or "dark"
+primaryColor="#26de5d"
+backgroundColor="#283352"
+secondaryBackgroundColor="#6481d1"
+textColor="#ffffff"
+font="sans serif"  # Options: "sans serif", "serif", or "monospace"
+
