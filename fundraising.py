@@ -11,22 +11,34 @@ from google.oauth2.service_account import Credentials
 import pandas as pd
 import json
 
+# -------------------------------
+# Load Google credentials ONCE
+# -------------------------------
+SCOPES = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
 
-# Load credentials
 creds_dict = json.loads(st.secrets["GOOGLE_CREDENTIALS"])
+
 creds = Credentials.from_service_account_info(
     creds_dict,
-    scopes=["https://www.googleapis.com/auth/spreadsheets"]
+    scopes=SCOPES
 )
+
 gc = gspread.authorize(creds)
 
-# Try opening the sheet
-SPREADSHEET_NAME = "MUEF Corporate Sponsors Target List 2025"
-try:
-    sh = gc.open(SPREADSHEET_NAME)
-    print("✅ Sheet opened successfully!")
-except Exception as e:
-    print("❌ Failed to open sheet:", e)
+st.write("Service account email:", creds.service_account_email)
+
+
+
+# # Try opening the sheet
+# SPREADSHEET_NAME = "MUEF Corporate Sponsors Target List 2025"
+# try:
+#     sh = gc.open(SPREADSHEET_NAME)
+#     print("✅ Sheet opened successfully!")
+# except Exception as e:
+#     print("❌ Failed to open sheet:", e)
 
 
 st.write("Testing secrets...")
@@ -47,16 +59,19 @@ def fundraising_tab():
         "Select an existing company from the dropdown to edit it, "
         "or leave it blank to add a new sponsor."
     )
+    SPREADSHEET_ID = "1JPS25edzt5Vyi27vVU3-FNmVtmFq1NpI"  # <-- your real ID
+
+    try:
+        sh = gc.open_by_key(SPREADSHEET_ID)
+        worksheet = sh.worksheet("Sponsor_target")
+        st.success("✅ Google Sheet connected")
+    except Exception as e:
+        st.exception(e)
+        st.stop()
 
     # -------------------------------
     # Google Sheets Authentication
     # -------------------------------
-    creds_dict = json.loads(st.secrets["GOOGLE_CREDENTIALS"])
-    creds = Credentials.from_service_account_info(
-        creds_dict,
-        scopes=["https://www.googleapis.com/auth/spreadsheets"]
-    )
-    gc = gspread.authorize(creds)
 
     SPREADSHEET_NAME = "MUEF Corporate Sponsors Target List 2025"
 
