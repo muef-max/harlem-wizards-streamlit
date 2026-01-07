@@ -159,6 +159,7 @@ if st.session_state.initial_open:
         "Approve contract and submit deposit ($1500)",
         "When to expect digital marketing and where it's mailed to",
         "Rep will send out updated prices on seating",
+        "Secure police detail for event",  # <-- new task
     ]
 
     for i, task_text in enumerate(pre_event_tasks):
@@ -189,13 +190,10 @@ if st.session_state.initial_open:
             else:
                 st.session_state[date_key] = None
 
-        # ---------- INIT NOTES (LOAD ONCE FROM SHEET) ----------
-        if task_text.startswith("Reach out to Event Support Rep"):
-            if not st.session_state.get(notes_loaded_key, False):
-                st.session_state[notes_key] = (
-                    row["Notes"].iloc[0] if not row.empty else ""
-                )
-                st.session_state[notes_loaded_key] = True
+        # ---------- INIT NOTES ----------
+        if not st.session_state.get(notes_loaded_key, False):
+            st.session_state[notes_key] = row["Notes"].iloc[0] if not row.empty else ""
+            st.session_state[notes_loaded_key] = True
 
         # ---------- CHECKBOX ----------
         st.session_state[done_key] = st.checkbox(
@@ -204,34 +202,16 @@ if st.session_state.initial_open:
             key=f"{done_key}_checkbox"
         )
 
-        # ---------- KICKOFF NOTES ----------
-        if task_text.startswith("Reach out to Event Support Rep"):
-            with st.expander("Details for Kickoff Call"):
-                st.info(
-                    "📞 Todd Davis (President) or Stefani (Account Mgr) @ 573-567-0202"
-                )
+        # ---------- TASK NOTES ----------
+        with st.expander(f"Add notes for '{task_text}':"):
+            st.text_area(
+                "Notes:",
+                value=st.session_state[notes_key],
+                key=notes_key,
+                height=120
+            )
 
-                st.text_area(
-                    "Add notes for the Kickoff Call:",
-                    key=notes_key,
-                    height=120
-                )
-
-                if st.button("💾 Save Kickoff Call Notes", key=f"save_{notes_key}"):
-
-                    row_idx = df_tasks[
-                        (df_tasks["section"] == "Pre_Event") &
-                        (df_tasks["task_text"] == task_text)
-                    ].index[0] + 2
-
-                    sheet.update(
-                        range_name=f"F{row_idx}",
-                        values=[[st.session_state[notes_key]]]
-                    )
-
-                    st.success("Notes saved")
-
-        # # ---------- COMPLETION DATE ----------
+        # ---------- COMPLETION DATE ----------
         if st.session_state[done_key]:
             st.session_state[date_key] = st.date_input(
                 f"Completion date for '{task_text}'",
@@ -239,18 +219,21 @@ if st.session_state.initial_open:
                 key=f"{date_key}_input"
             )
 
-        # ---------- SAVE DONE + DATE (SAFE) ----------
-        row_idx = df_tasks[
-            (df_tasks["section"] == "Pre_Event") &
-            (df_tasks["task_text"] == task_text)
-        ].index[0] + 2
+        # ---------- SAVE TO SHEET ----------
+        # Determine row index
+        if not row.empty:
+            row_idx = row.index[0] + 2
+        else:
+            row_idx = len(df_tasks) + 2
+            sheet.append_row(["Pre_Event", i+1, task_text, False, "", ""])
 
+        # Save Done, Date, Notes
         sheet.update(
-            range_name=f"D{row_idx}:E{row_idx}",
+            range_name=f"D{row_idx}:F{row_idx}",
             values=[[
                 st.session_state[done_key],
-                st.session_state[date_key].strftime("%Y-%m-%d")
-                if st.session_state[date_key] else ""
+                st.session_state[date_key].strftime("%Y-%m-%d") if st.session_state[date_key] else "",
+                st.session_state[notes_key]
             ]]
         )
 
