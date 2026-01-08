@@ -159,7 +159,7 @@ if st.session_state.initial_open:
         "Approve contract and submit deposit ($1500)",
         "When to expect digital marketing and where it's mailed to",
         "Rep will send out updated prices on seating",
-        "Secure police detail for event",  # <-- new task
+        "Secure police detail for event"  # <-- new task
     ]
 
     for i, task_text in enumerate(pre_event_tasks):
@@ -168,40 +168,39 @@ if st.session_state.initial_open:
         date_key = f"Pre_Event_task{i}_date"
         notes_key = f"Pre_Event_task{i}_notes"
         notes_loaded_key = f"{notes_key}_loaded"
-
+    
         row = pre_event_df[pre_event_df["task_text"] == task_text]
-
+    
         # ---------- INIT DONE ----------
         if done_key not in st.session_state:
             st.session_state[done_key] = (
                 str(row["done"].iloc[0]).upper() == "TRUE"
-                if not row.empty
-                else False
+                if not row.empty and "done" in row else False
             )
-
+    
         # ---------- INIT DATE ----------
         if date_key not in st.session_state:
-            if not row.empty:
-                completed_date_value = row["completed_date"].iloc[0] if "completed_date" in row else None
-                if completed_date_value:
-                    st.session_state[date_key] = pd.to_datetime(completed_date_value).date()
-                else:
-                    st.session_state[date_key] = None
+            if not row.empty and "completed_date" in row:
+                completed_date_value = row["completed_date"].iloc[0]
+                st.session_state[date_key] = pd.to_datetime(completed_date_value).date() if completed_date_value else None
             else:
                 st.session_state[date_key] = None
-
+    
         # ---------- INIT NOTES ----------
+        if notes_key not in st.session_state:
+            st.session_state[notes_key] = ""  # always initialize to prevent KeyError
+    
         if not st.session_state.get(notes_loaded_key, False):
-            st.session_state[notes_key] = row["Notes"].iloc[0] if not row.empty else ""
+            st.session_state[notes_key] = row["Notes"].iloc[0] if not row.empty and "Notes" in row else ""
             st.session_state[notes_loaded_key] = True
-
+    
         # ---------- CHECKBOX ----------
         st.session_state[done_key] = st.checkbox(
             task_text,
             value=st.session_state[done_key],
             key=f"{done_key}_checkbox"
         )
-
+    
         # ---------- TASK NOTES ----------
         with st.expander(f"Add notes for '{task_text}':"):
             st.text_area(
@@ -210,7 +209,7 @@ if st.session_state.initial_open:
                 key=notes_key,
                 height=120
             )
-
+    
         # ---------- COMPLETION DATE ----------
         if st.session_state[done_key]:
             st.session_state[date_key] = st.date_input(
@@ -218,24 +217,23 @@ if st.session_state.initial_open:
                 value=st.session_state[date_key],
                 key=f"{date_key}_input"
             )
-
+    
         # ---------- SAVE TO SHEET ----------
-        # Determine row index
         if not row.empty:
             row_idx = row.index[0] + 2
         else:
             row_idx = len(df_tasks) + 2
             sheet.append_row(["Pre_Event", i+1, task_text, False, "", ""])
-
-        # Save Done, Date, Notes
+    
         sheet.update(
             range_name=f"D{row_idx}:F{row_idx}",
-            values=[[
+            values=[[  
                 st.session_state[done_key],
                 st.session_state[date_key].strftime("%Y-%m-%d") if st.session_state[date_key] else "",
                 st.session_state[notes_key]
             ]]
         )
+
 
 
 # -------------------------
@@ -361,39 +359,36 @@ if st.session_state.event_open:
     EVENT_DATE_TASK = "Identify partners for event (PTO)"
     st.markdown("## 📅 Event Planning & PTO Partners")
 
+    # -------------------------
     # Load Sheet
+    # -------------------------
     records = sheet.get_all_records()
     df_tasks = pd.DataFrame(records)
     events_df = df_tasks[df_tasks["section"] == "Events"]
 
-    # Event date input section
+    # -------------------------
+    # Event date input (main event)
+    # -------------------------
     if "event_date" not in st.session_state:
-        # Load existing event date from the Google Sheet into session state
         event_row = events_df[events_df["task_text"] == EVENT_DATE_TASK]
         if not event_row.empty and "Event Date" in event_row.columns:
             completed_event_date = event_row["Event Date"].iloc[0]
-            if pd.notna(completed_event_date):
-                st.session_state["event_date"] = pd.to_datetime(completed_event_date).date()
-            else:
-                st.session_state["event_date"] = None
+            st.session_state["event_date"] = pd.to_datetime(completed_event_date).date() if pd.notna(completed_event_date) else None
         else:
-            st.session_state["event_date"] = None  # Default to None if not found
-    
-    # Event date input
-    event_date_value = st.session_state["event_date"] if pd.notna(st.session_state["event_date"]) else None
-    
+            st.session_state["event_date"] = None
+
     st.session_state.event_date = st.date_input(
         "Enter the date of the event",
-        value=event_date_value,  # Load existing date into the date input
-        key="event_date_input"  # Unique key
+        value=st.session_state["event_date"],
+        key="event_date_input"
     )
 
-    # Store selected event date in session state
-    if st.session_state.event_date:
+    if pd.notna(st.session_state.event_date):
         st.info(f"📅 Event Date: {st.session_state.event_date.strftime('%d_%b-%Y')}")
 
-
-
+    # -------------------------
+    # Tasks
+    # -------------------------
     event_tasks = [
         "Identify partners for event (PTO)",
         "Check in with Wizards Rep for marketing materials & to review updated prices and details",
@@ -407,26 +402,29 @@ if st.session_state.event_open:
         date_key = f"event_task{i}_date"
         notes_key = f"event_task{i}_notes"
         notes_loaded_key = f"{notes_key}_loaded"
-        
+
         row = events_df[events_df["task_text"] == task_text]
 
         # ---------- INIT DONE ----------
         if done_key not in st.session_state:
             st.session_state[done_key] = (
-                str(row["done"].iloc[0]).upper() == "TRUE" if not row.empty else False
+                str(row["done"].iloc[0]).upper() == "TRUE" if not row.empty and "done" in row.columns else False
             )
 
         # ---------- INIT DATE ----------
         if date_key not in st.session_state:
-            if not row.empty:
-                completed_date_value = row["completed_date"].iloc[0] if "completed_date" in row else None
-                st.session_state[date_key] = pd.to_datetime(completed_date_value).date() if completed_date_value else None
+            if not row.empty and "completed_date" in row.columns:
+                completed_date_value = row["completed_date"].iloc[0]
+                st.session_state[date_key] = pd.to_datetime(completed_date_value).date() if pd.notna(completed_date_value) else None
+            else:
+                st.session_state[date_key] = None
 
-        # ---------- INIT NOTES (LOAD ONCE FROM SHEET) ----------
+        # ---------- INIT NOTES ----------
+        if notes_key not in st.session_state:
+            st.session_state[notes_key] = ""
+
         if not st.session_state.get(notes_loaded_key, False):
-            st.session_state[notes_key] = (
-                row["Notes"].iloc[0] if not row.empty and "Notes" in row.columns else ""
-            )
+            st.session_state[notes_key] = row["Notes"].iloc[0] if not row.empty and "Notes" in row.columns else ""
             st.session_state[notes_loaded_key] = True
 
         # ---------- CHECKBOX ----------
@@ -436,165 +434,60 @@ if st.session_state.event_open:
             key=f"{done_key}_checkbox"
         )
 
-        # ---------- NOTES SECTION ----------
-        if task_text == "Identify partners for event (PTO)":
-            with st.expander("Details for Identifying Partners"):
-                st.text_area(
-                    "Add notes for event partners:",
-                    key=notes_key,
-                    height=120,
-                    value=st.session_state.get(notes_key, "")  # Load existing notes
-                )
+        # ---------- NOTES ----------
+        with st.expander(f"Add notes for '{task_text}':"):
+            st.text_area(
+                "Notes:",
+                value=st.session_state.get(notes_key, ""),
+                key=notes_key,
+                height=120
+            )
 
-                if st.button("💾 Save Partner Notes", key=f"save_{notes_key}"):
-                    row_idx = events_df[
-                        (events_df["section"] == "Events") &
-                        (events_df["task_text"] == task_text)
-                    ].index[0] + 2  # Assuming a 2-row header
+            
+        # ---------- COMPLETION DATE ----------
+        if st.session_state[done_key]:  # Show date input if the task is marked as done
+            date_val = st.session_state.get(date_key)
+            if pd.isna(date_val):  # handles NaT
+                date_val = None
+        
+            st.session_state[date_key] = st.date_input(
+                f"Completion date for '{task_text}'",
+                value=date_val,
+                key=f"{date_key}_input"
+            )
 
-                    sheet.update(
-                        range_name=f"F{row_idx}",  # Column for Partner Notes
-                        values=[[st.session_state[notes_key]]]
-                    )
-                    st.success("Notes saved")
 
-        # ---------- ASSEMBLY DATE INPUT ----------
-        if task_text == "Schedule 20-minute assemblies (Memorial, Clough, Miscoe)":
-            with st.expander("Enter assembly times for all schools"):
-        
-                # Initialize the assembly date in session state
-                if "assembly_date" not in st.session_state:
-                    # Load existing assembly date from the Google Sheet into session state
-                    assembly_row = events_df[events_df["task_text"] == task_text]
-                    if not assembly_row.empty and "Assembly_Date" in assembly_row.columns:
-                        completed_assembly_date = assembly_row["Assembly_Date"].iloc[0]
-                        if pd.notna(completed_assembly_date):
-                            st.session_state["assembly_date"] = pd.to_datetime(completed_assembly_date).date()
-                        else:
-                            st.session_state["assembly_date"] = None
-                    else:
-                        st.session_state["assembly_date"] = None  # Default to None if not found
-        
-                # Assembly date input
-                assembly_date_value = st.session_state["assembly_date"] if pd.notna(st.session_state["assembly_date"]) else None
-        
-                assembly_date = st.date_input(
-                    "Select assembly date for all schools",
-                    value=assembly_date_value,  # Load existing date into the date input
-                    key="assembly_date_input"  # Unique key
-                )
-                
-                st.session_state["assembly_date"] = assembly_date  # Store selected date in session state
-        
-                # Convert to string for display
-                if assembly_date:
-                    st.info(f"📅 Assembly Date: {assembly_date.strftime('%d_%b-%Y')}")
-        
-                # Notes section for entering assembly notes
-                st.subheader("Enter notes for each school")
-                assembly_notes_key = "assembly_notes"
-                if assembly_notes_key not in st.session_state:
-                    assembly_row = events_df[events_df["task_text"] == task_text]
-                    if not assembly_row.empty and "Notes" in assembly_row.columns:
-                        st.session_state[assembly_notes_key] = assembly_row["Notes"].iloc[0] if isinstance(assembly_row["Notes"].iloc[0], str) else ""
-                    else:
-                        st.session_state[assembly_notes_key] = ""  # Default to empty if not found
-        
-                assembly_notes = st.text_area(
-                    "Add notes for assemblies:",
-                    value=st.session_state[assembly_notes_key],  # Load existing notes into the text area
-                    height=120
-                )
-        
-                # Save the notes back to session state
-                st.session_state[assembly_notes_key] = assembly_notes
-        
-                # Saving the notes and assembly date to Google Sheet when the task is marked done
-                if st.session_state[done_key]:  # Only save if the task is marked done
-                    if not row.empty:
-                        row_idx = events_df[
-                            (events_df["task_text"] == task_text)
-                        ].index[0] + 2  # Adjust according to your sheet format
-        
-                        # Update the Google Sheet with the assembly notes in the "Notes" column
-                        sheet.update(
-                            range_name=f"F{row_idx}",  # 'F' corresponds to the "Notes" column
-                            values=[[st.session_state[assembly_notes_key]]]
-                        )  # Correctly placed
-                        st.success("Assembly notes saved to the sheet.")  # Confirmation message
-        
-                        # Update the Google Sheet with the assembly date in the "Assembly_Date" column
-                        if st.session_state["assembly_date"] is not None:  # Ensure date is valid before saving
-                            sheet.update(
-                                range_name=f"G{row_idx}",  # Change 'G' to the correct column letter for Assembly Date
-                                values=[[st.session_state["assembly_date"].strftime("%Y-%m-%d")]]
-                            )
-                            st.success("Assembly date saved to the sheet.")  # Confirmation message
-        
-                # Display confirmation for the schedule if applicable
-                if assembly_date:
-                    st.success(
-                        f"📅 Assemblies Scheduled on {assembly_date.strftime('%d_%b-%Y')}"
-                    )
-        
-        
-                # ---------- COMPLETION DATE ----------
-                if st.session_state[done_key]:  # Show date input if the task is marked as done
-                    st.session_state[date_key] = st.date_input(
-                        f"Completion date for '{task_text}'",
-                        value=st.session_state[date_key] if st.session_state[date_key] else None,
-                        key=f"{date_key}_input"  # Unique key for the date input
-                    )
-        
-                    # Update the Google Sheet with the completion date
-                    if not row.empty:
-                        row_idx = events_df[
-                            (events_df["task_text"] == task_text)
-                        ].index[0] + 2  # Adjust according to your sheet format
-        
-                        if st.session_state[date_key]:  # Only update if a date is selected
-                            sheet.update(
-                                range_name=f"E{row_idx}",
-                                values=[[st.session_state[date_key].strftime("%Y-%m-%d")]]
-                            )
-                        else:
-                            st.warning(f"Please select a completion date for '{task_text}'.")
-        
-                # ---------- SAVE DONE STATUS -----------
-                if not row.empty:  # Ensure that row isn't empty before updating
-                    row_idx = events_df[
-                        (events_df["task_text"] == task_text)
-                    ].index[0] + 2  # Adjust according to your sheet format
-        
-                    # Save the 'done' status to the sheet
-                    sheet.update(
-                        range_name=f"D{row_idx}",
-                        values=[[st.session_state[done_key]]]
-                    )
-    # ===============================
-    # EVENT DATE SAVE (EVENT-LEVEL)
-    # ===============================
-    
-    EVENT_DATE_TASK = "Identify partners for event (PTO)"
-    event_task_done_key = "event_task0_done"
-    
-    event_row = events_df[events_df["task_text"] == EVENT_DATE_TASK]
-    
-    if (
-        not event_row.empty
-        and st.session_state.get(event_task_done_key)
-        and st.session_state.get("event_date")
-    ):
-        row_idx = event_row.index[0] + 2  # ← ALWAYS DEFINED
-    
+        # ---------- SAVE TO SHEET ----------
+        if not row.empty:
+            row_idx = row.index[0] + 2
+        else:
+            row_idx = len(df_tasks) + 2
+            sheet.append_row(["Events", i + 1, task_text, False, "", ""])
+
+        # Safely update values, checking for None dates
         sheet.update(
-            range_name=f"H{row_idx}",  # Event Date column
+            range_name=f"D{row_idx}:F{row_idx}",
+            values=[[
+                st.session_state[done_key],
+                st.session_state[date_key].strftime("%Y-%m-%d") if pd.notna(st.session_state[date_key]) else "",
+                st.session_state[notes_key]
+            ]]
+        )
+
+    # -------------------------
+    # SAVE EVENT DATE TO SHEET
+    # -------------------------
+    event_row = events_df[events_df["task_text"] == EVENT_DATE_TASK]
+    event_task_done_key = "event_task0_done"
+    if not event_row.empty and st.session_state.get(event_task_done_key) and pd.notna(st.session_state.get("event_date")):
+        row_idx = event_row.index[0] + 2
+        sheet.update(
+            range_name=f"H{row_idx}",  # Column for Event Date
             values=[[st.session_state["event_date"].strftime("%Y-%m-%d")]]
         )
-    
         st.success("📅 Event date saved to the sheet.")
 
-   
+
 # -------------------------
 # Website Section
 # -------------------------
