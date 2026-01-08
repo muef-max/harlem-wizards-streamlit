@@ -225,14 +225,42 @@ if st.session_state.initial_open:
             row_idx = len(df_tasks) + 2
             sheet.append_row(["Pre_Event", i+1, task_text, False, "", ""])
     
-        sheet.update(
-            range_name=f"D{row_idx}:F{row_idx}",
-            values=[[  
-                st.session_state[done_key],
-                st.session_state[date_key].strftime("%Y-%m-%d") if st.session_state[date_key] else "",
-                st.session_state[notes_key]
-            ]]
-        )
+        # ---------- SAVE TO SHEET (ONLY WHEN DONE OR NOTES CHANGED) ----------
+        if st.session_state[done_key] or st.session_state.get(notes_key):
+        
+            if not row.empty:
+                row_idx = row.index[0] + 2
+            else:
+                row_idx = len(df_tasks) + 2
+                sheet.append_row(["Pre_Event", i+1, task_text, False, "", ""])
+        
+            update_task(
+                sheet,
+                section="Pre_Event",
+                task_id=i+1,
+                done=st.session_state[done_key],
+                completed_date=(
+                    st.session_state[date_key].strftime("%Y-%m-%d")
+                    if st.session_state[date_key]
+                    else ""
+                ),
+                notes=st.session_state[notes_key]
+            )   
+
+            if st.button("💾 Save Task", key=f"save_pre_event_{i}"):
+                update_task(
+                    sheet,
+                    section="Pre_Event",
+                    task_id=i+1,
+                    done=st.session_state[done_key],
+                    completed_date=(
+                        st.session_state[date_key].strftime("%Y-%m-%d")
+                        if st.session_state[date_key]
+                        else ""
+                    ),
+                    notes=st.session_state[notes_key]
+                )
+                st.success("Saved")
 
 
 
@@ -783,12 +811,29 @@ if st.session_state.vol_coord_open:
         "Ensure volunteers have instructions and materials",
         "Assign volunteers to tasks"
     ]
-
+    
+    
     def volunteer_special_inputs(i):
         task_text = vol_tasks[i]
         notes_key = f"Volunteer_task{i}_notes"
         done_key = f"Volunteer_task{i}_done"
         date_key = f"Volunteer_task{i}_date"
+
+        if task_text == "Coordinate day-of-event volunteer shifts":
+            st.markdown(
+                """
+                <div style="margin-left: 20px; margin-bottom: 10px; color: #73faff; font-size: 1.1em;">
+                <strong>Venue Volunteer Set Up:</strong><br>
+                • Set up 4:30 PM – pull bleachers, set up chairs, help with hand truck & unloading van,\n direct Wizards to locker room (~4 volunteers)<br>
+                • Greeters & ticket takers (Lobby) 5:30–6:45 PM (~5 volunteers)<br>
+                • Concessions 5:00 PM: 2–3; 5–6 volunteers during halftime<br>
+                • Seating attendants 5:00 PM: 2–3 volunteers (gym & meet-and-greet)<br>
+                • Souvenir table 5:30 PM: 6 adults, 2 kids (8 total)<br>
+                • General clean up during & after event (4 volunteers)<br>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
         # Load previous data
         row = volunteer_df[volunteer_df["task_text"] == task_text]
@@ -830,20 +875,14 @@ if st.session_state.vol_coord_open:
             key=f"{done_key}_widget"
         )
 
-        # Save to Google Sheet when task is marked done
         if st.session_state.get(done_key):
-            if not row.empty:
-                row_idx = row.index[0] + 2
-            else:
-                row_idx = len(df_tasks) + 2
-                sheet.append_row(["Marketing", i+1, task_text, False, "", "", ""])
-
-            sheet.update(f"D{row_idx}", [[st.session_state[done_key]]])
-            sheet.update(f"F{row_idx}", [[st.session_state.get(notes_key, "")]])
-        
+            st.session_state[date_key] = st.date_input(
+                f"Completion date for '{task_text}'",
+                value=st.session_state.get(date_key),
+                key=f"{date_key}_input"
+            )
 
 
-#committ again
         # Save to Google Sheet only when task is done
         if st.session_state.get(done_key):
             if not row.empty:
