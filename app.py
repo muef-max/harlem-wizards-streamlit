@@ -823,13 +823,26 @@ if st.session_state.vol_coord_open:
             height=120
         )
 
-        # # Completion date input
-        # if st.session_state.get(done_key):
-        #     st.session_state[date_key] = st.date_input(
-        #         f"Completion date for '{task_text}'",
-        #         value=st.session_state.get(date_key),
-        #         key=f"{date_key}_input"
-        #     )
+        # ✅ ADD THIS
+        st.session_state[done_key] = st.checkbox(
+            f"Mark '{task_text}' as done",
+            value=st.session_state.get(done_key, False),
+            key=f"{done_key}_widget"
+        )
+
+        # Save to Google Sheet when task is marked done
+        if st.session_state.get(done_key):
+            if not row.empty:
+                row_idx = row.index[0] + 2
+            else:
+                row_idx = len(df_tasks) + 2
+                sheet.append_row(["Marketing", i+1, task_text, False, "", "", ""])
+
+            sheet.update(f"D{row_idx}", [[st.session_state[done_key]]])
+            sheet.update(f"F{row_idx}", [[st.session_state.get(notes_key, "")]])
+        
+
+
 
         # Save to Google Sheet only when task is done
         if st.session_state.get(done_key):
@@ -841,6 +854,7 @@ if st.session_state.vol_coord_open:
 
             sheet.update(f"D{row_idx}", [[st.session_state[done_key]]])
             sheet.update(f"F{row_idx}", [[st.session_state.get(notes_key, "")]])
+            
             if st.session_state.get(date_key):
                 sheet.update(f"E{row_idx}", [[st.session_state[date_key].strftime("%Y-%m-%d")]])
             # Only save Volunteer Orgs for first task
@@ -1075,7 +1089,7 @@ if st.session_state.eventday_open:
 
     # Event Day Tasks
     eventday_tasks = [
-        "Set up the venue",
+        "Set up Souvenir Space",
         "Check AV equipment",
         "Organize registration/check-in tables",
         "Coordinate with volunteers for event flow",
@@ -1096,8 +1110,37 @@ if st.session_state.eventday_open:
         done_key = f"EventDay_task{i}_done"
         date_key = f"EventDay_task{i}_date"
 
+                # ✅ ADD THIS BLOCK
+        if task_text == "Set up Souvenir Space":
+            st.markdown(
+                """
+                <div style="margin-left: 20px; margin-bottom: 10px; color: #73faff; font-size: 1.2em;">
+                <strong>Souvenir Sales Setup:</strong><br>
+                • 8 tables (6–7 feet each) with Green tablecloths if possible<br>
+                • 16 chairs<br>
+                • Location near entrance in an area capable of handling a large crowd
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        
+               # ✅ ADD THIS BLOCK
+        if task_text == "Organize registration/check-in tables":
+           st.markdown(
+               """
+               <div style="margin-left: 20px; margin-bottom: 10px; color: #73faff; font-size: 1.2em;">
+               <strong>Registration & Check-in tables:</strong><br>
+               • 4 tables (6 feet each) with Green tablecloths if possible<br>
+               • 6 chairs<br>
+               • Location: Lobby- 1 on either side of entrance, 1 in center, 1 in front lobby for same day purchase
+               </div>
+               """,
+               unsafe_allow_html=True
+           )
+        
         # Load previous data from sheet
         row = eventday_df[eventday_df["task_text"] == task_text]
+        
         if not st.session_state.get(notes_key) and not row.empty:
             st.session_state[notes_key] = row["Notes"].iloc[0] if "Notes" in row.columns else ""
         if not st.session_state.get(done_key) and not row.empty:
@@ -1106,20 +1149,20 @@ if st.session_state.eventday_open:
             completed_date_value = row["completed_date"].iloc[0] if "completed_date" in row.columns else None
             st.session_state[date_key] = pd.to_datetime(completed_date_value).date() if completed_date_value else None
 
-        # Notes input
-        st.text_area(
-            f"Add notes for '{task_text}':",
-            value=st.session_state.get(notes_key, ""),
-            key=notes_key,
-            height=120
-        )
+        # # Notes input
+        # st.text_area(
+        #     f"Add notes for '{task_text}':",
+        #     value=st.session_state.get(notes_key, ""),
+        #     key=notes_key,
+        #     height=120
+        # )
 
         # Done checkbox
-        st.session_state[done_key] = st.checkbox(
-            f"Mark '{task_text}' as done",
-            value=st.session_state.get(done_key, False),
-            key=f"{done_key}_widget"
-        )
+        # st.session_state[done_key] = st.checkbox(
+        #     f"Mark '{task_text}' as done",
+        #     value=st.session_state.get(done_key, False),
+        #     key=f"{done_key}_widget"
+        # )
 
         # Save to Google Sheet when done
         if st.session_state[done_key]:
