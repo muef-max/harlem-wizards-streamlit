@@ -99,6 +99,7 @@ def update_task(sheet, section, task_id, done=None, completed_date=None,
 
 st.title("Harlem Wizards Event Organizer")
 
+
 # -------------------------
 # Helper function for tasks
 # -------------------------
@@ -136,11 +137,12 @@ def task_list_section(section_name, tasks, special_inputs=None):
 if "initial_open" not in st.session_state:
     st.session_state.initial_open = False
 
-if st.button("Initial Planning with Wizards - Target Dates ➡️ July & August"):
+if st.button("Initial Planning with Wizards - Target Dates ➡️ July & Aug"):
     st.session_state.initial_open = not st.session_state.initial_open
 
 if st.session_state.initial_open:
     st.markdown("## 📝 Initial Planning with Wizards")
+    
 
     # -------------------------
     # Load Sheet
@@ -271,7 +273,7 @@ if st.session_state.initial_open:
 if "nipmuc_facilities_open" not in st.session_state:
     st.session_state.nipmuc_facilities_open = False
 
-if st.button("Nipmuc Facilities - Secure Venue and Resources - Target Dates ➡️ July & September"):
+if st.button("Nipmuc Facilities - Secure Venue and Resources - Target Dates ➡️ July & Sept"):
     st.session_state.nipmuc_facilities_open = not st.session_state.nipmuc_facilities_open
 
 if st.session_state.nipmuc_facilities_open:
@@ -380,7 +382,7 @@ if st.session_state.nipmuc_facilities_open:
 if "event_open" not in st.session_state:
     st.session_state.event_open = False
 
-if st.button("Event Planning & PTO Partners - Target Dates ➡️ September & October"):
+if st.button("Event Planning & PTO Partners - Target Dates ➡️ Sept & Oct"):
     st.session_state.event_open = not st.session_state.event_open
 
 if st.session_state.event_open:
@@ -522,7 +524,7 @@ if st.session_state.event_open:
 if "website_open" not in st.session_state:
     st.session_state.website_open = False
 
-if st.button("Website - Target Dates ➡️ October through January"):
+if st.button("Website - Target Dates ➡️ Oct - Jan"):
     st.session_state.website_open = not st.session_state.website_open
 
 if st.session_state.website_open:
@@ -643,7 +645,7 @@ if st.session_state.website_open:
 if "dream_team_open" not in st.session_state:
     st.session_state.dream_team_open = False
 
-if st.button("Mendon-Upton Dream Team - Target Dates ➡️ October through January"):
+if st.button("Mendon-Upton Dream Team - Target Dates ➡️ Oct-Jan"):
     st.session_state.dream_team_open = not st.session_state.dream_team_open
 
 if st.session_state.dream_team_open:
@@ -771,7 +773,7 @@ if st.session_state.dream_team_open:
 if "vol_coord_open" not in st.session_state:
     st.session_state.vol_coord_open = False
 
-if st.button("Volunteer Coordination - Target Dates ➡️ September through January"):
+if st.button("Volunteer Coordination - Target Dates ➡️ Sept-Jan"):
     st.session_state.vol_coord_open = not st.session_state.vol_coord_open
 
 if st.session_state.vol_coord_open:
@@ -915,7 +917,7 @@ if st.session_state.vol_coord_open:
 if "marketing_open" not in st.session_state:
     st.session_state.marketing_open = False
 
-if st.button("Marketing / Communications - Target Dates ➡️ November through January"):
+if st.button("Marketing / Communications - Target Dates ➡️ Nov-Jan"):
     st.session_state.marketing_open = not st.session_state.marketing_open
 
 if st.session_state.marketing_open:
